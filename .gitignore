@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.env
+.venv
+venv/
+env/
+
+# Actual secrets — never commit real ones!
+.env.local
+.env.real
+.env.secrets
+
+# Test / CI output
+.pytest_cache/
+.coverage
+htmlcov/
+*.xml
+env-sentinel-report.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
