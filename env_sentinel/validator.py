@@ -16,7 +16,8 @@ class ValidationError:
 # ── Individual validators ────────────────────────────────────────────────────
 
 def _is_url(value: str) -> bool:
-    return bool(re.match(r"^https?://\S+", value, re.IGNORECASE))
+    """Accept any scheme://... URL — https, http, redis, amqp, ftp, etc."""
+    return bool(re.match(r"^[a-zA-Z][a-zA-Z0-9+\-.]*://\S+", value))
 
 
 def _is_integer(value: str) -> bool:
@@ -116,13 +117,14 @@ _AUTO_RULES = [
     # key pattern → expected type
     # DB URL must come before generic _URL rule so DATABASE_URL → db_url, not url
     (re.compile(r"(^|_)(DATABASE|DB)_(URL|DSN|URI)$", re.I), "db_url"),
-    (re.compile(r"_(URL|DSN|URI|ENDPOINT|HOST)$",  re.I), "url"),
-    (re.compile(r"_(PORT|_PORT)$",                  re.I), "port"),
-    (re.compile(r"_(EMAIL|MAIL)$",                  re.I), "email"),
+    # _URL/_DSN/_URI/_ENDPOINT → url  (HOST excluded: hostnames are not full URLs)
+    (re.compile(r"_(URL|DSN|URI|ENDPOINT)$",         re.I), "url"),
+    (re.compile(r"_(PORT)$",                          re.I), "port"),
+    (re.compile(r"_(EMAIL|MAIL)$",                    re.I), "email"),
     (re.compile(r"_(ENABLED|DISABLED|FLAG|DEBUG|VERBOSE)$", re.I), "boolean"),
     (re.compile(r"_(TIMEOUT|TTL|EXPIRY|EXPIRATION|INTERVAL|RETRY_DELAY)$", re.I), "integer"),
-    (re.compile(r"_(UUID|GUID)$",                   re.I), "uuid"),
-    (re.compile(r"_(SECRET_KEY|SIGNING_KEY|ENCRYPTION_KEY)$", re.I), "hex"),
+    (re.compile(r"_(UUID|GUID)$",                     re.I), "uuid"),
+    # SECRET_KEY / SIGNING_KEY removed — secret values use many non-hex formats
 ]
 
 
