@@ -3,17 +3,11 @@ name: Environment Sentinel
 on:
   push:
     branches: [main, staging]
-    paths:
-      - ".env*"
-      - "**/.env*"
   pull_request:
-    paths:
-      - ".env*"
-      - "**/.env*"
 
 jobs:
-  env-check:
-    name: Check env files
+  tests:
+    name: Run tests
     runs-on: ubuntu-latest
 
     steps:
@@ -25,48 +19,69 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install env-sentinel
-        run: pip install env-sentinel
+      - name: Install dependencies
+        run: pip install click pytest
+
+      - name: Install env-sentinel from source
+        run: pip install -e .
+
+      - name: Run test suite
+        run: pytest tests/ -v
+
+  env-check:
+    name: Check example env files
+    runs-on: ubuntu-latest
+    needs: tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install env-sentinel from source
+        run: pip install -e .
 
       # ── Diff: verify all required keys are present ──────────────────────────
       - name: Diff .env.example vs .env.staging
         if: always()
         run: |
-          env-sentinel diff .env.example .env.staging
-        continue-on-error: false
+          env-sentinel diff examples/.env.example examples/.env.staging
 
       - name: Diff .env.example vs .env.production
         if: always()
         run: |
-          env-sentinel diff .env.example .env.production
-        continue-on-error: false
+          env-sentinel diff examples/.env.example examples/.env.production
 
       # ── Validate: check value formats ────────────────────────────────────────
       - name: Validate .env.staging format
         if: always()
-        run: env-sentinel validate .env.staging
+        run: env-sentinel validate examples/.env.staging
 
       - name: Validate .env.production format
         if: always()
-        run: env-sentinel validate .env.production
+        run: env-sentinel validate examples/.env.production
 
       # ── Scan: catch accidental secrets ──────────────────────────────────────
       - name: Scan .env.staging for secrets
         if: always()
-        run: env-sentinel scan .env.staging
+        run: env-sentinel scan examples/.env.staging
 
       - name: Scan .env.production for secrets
         if: always()
-        run: env-sentinel scan .env.production
+        run: env-sentinel scan examples/.env.production
 
       # ── Full audit report (JSON artifact) ───────────────────────────────────
       - name: Full audit with JSON report
         if: always()
         run: |
           env-sentinel audit \
-            --template .env.example \
-            --check .env.staging \
-            --check .env.production \
+            --template examples/.env.example \
+            --check examples/.env.staging \
+            --check examples/.env.production \
             --scan-secrets \
             --json-report env-sentinel-report.json || true
 
